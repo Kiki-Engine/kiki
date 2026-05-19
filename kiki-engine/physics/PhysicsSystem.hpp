@@ -6,6 +6,9 @@
 #include <glm/glm.hpp>
 #include <Jolt/Physics/Collision/CastResult.h>
 #include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/ShapeCast.h>
+#include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Body/BodyFilter.h>
 #include "physics/PhysicsUtils.hpp"
 #include "physics/PhysicsComponents.hpp"
@@ -71,6 +74,50 @@ namespace Kiki {
                 _manager.GetBodyInterface().SetLinearVelocity(rb->bodyID, ToJPH(velocity));
             }
 		}
+
+        RaycastHit SphereCast(const glm::vec3& origin, const glm::vec3& direction, float radius, float maxDistance, JPH::BodyID ignoreID = JPH::BodyID()) {
+            RaycastHit result;
+
+            if (maxDistance <= 0.0f || radius <= 0.0f) {
+                return result;
+            }
+
+            JPH::SphereShape sphereShape(radius);
+            sphereShape.SetEmbedded();
+
+            JPH::RShapeCast shapeCast(
+                &sphereShape,
+                JPH::Vec3::sReplicate(1.0f),
+                JPH::RMat44::sTranslation(ToJPHR(origin)),
+                ToJPH(direction * maxDistance)
+            );
+
+            JPH::ShapeCastSettings settings;
+            settings.mUseShrunkenShapeAndConvexRadius = true;
+            settings.mReturnDeepestPoint = false;
+            settings.mBackFaceModeTriangles = JPH::EBackFaceMode::IgnoreBackFaces;
+
+            JPH::ClosestHitCollisionCollector<JPH::CastShapeCollector> collector;
+            JPH::IgnoreSingleBodyFilter bodyFilter(ignoreID);
+
+            _manager.GetSystem()->GetNarrowPhaseQuery().CastShape(
+                shapeCast,
+                settings,
+                JPH::RVec3::sZero(),
+                collector,
+                {},
+                {},
+                bodyFilter
+            );
+
+            if (collector.HadHit()) {
+                result.hasHit = true;
+                result.distance = collector.mHit.mFraction * maxDistance;
+                result.position = origin + direction * result.distance;
+            }
+
+            return result;
+        }
     };
     class PhysicsSystem : public System {
     public:

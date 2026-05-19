@@ -19,6 +19,15 @@ struct ThirdPersonCameraComponent {
     float   rotateSensitivity = 0.15f;
     float zoomSensitivity = 0.5f;
 
+    // wall collision parameters
+    float   collisionBuffer = 0.15f;         // distance kept from a hit wall
+    float   collisionRadius = 0.35f;         // sphere radius used for camera collision sweeps
+    float   minCollisionDistance = 0.4f;     // minimum allowed distance from pivot
+    float   pullInSpeed = 30.0f;             // smoothing rate when shortening distance
+    float   pushOutSpeed = 6.0f;             // smoothing rate when restoring distance
+
 	// run-time variables
 	glm::vec3 currentPos = { 0, 0, 0 };  // current camera position after smoothing
+    float     currentDistance = 5.0f;     // smoothed effective distance (after collision)
+    bool      currentPosInitialized = false;
 };

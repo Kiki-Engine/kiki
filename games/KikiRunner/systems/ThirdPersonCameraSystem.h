@@ -108,7 +108,6 @@ private:
 		auto* targetTransform = World::Get().GetComponent<TransformComponent>(tpsCam.followTarget);
 		if (!targetTransform) return;
 
-		// follow point = character position + height offset
 		glm::vec3 pivotPos = targetTransform->position
 			+ glm::vec3(0, tpsCam.height, 0);
 
@@ -121,14 +120,51 @@ private:
 			tpsCam.distance * cos(pitchRad) * cos(yawRad)
 		};
 
-		glm::vec3 desiredPos = pivotPos + offset;
+		glm::vec3 dir = glm::normalize(offset);
 
-		// smooth Interpolation (SmoothDamp effect)
-		tpsCam.currentPos = glm::mix(
-			tpsCam.currentPos,
-			desiredPos,
-			tpsCam.smoothSpeed * dt
-		);
+		PhysicsService& physics = World::Get().Registry().ctx().get<PhysicsService>();
+		JPH::BodyID ignoreID;
+		if (auto* rb = World::Get().GetComponent<RigidBodyComponent>(tpsCam.followTarget)) {
+			ignoreID = rb->bodyID;
+		}
+
+		float requestedDistance = tpsCam.distance;
+		auto hit = physics.SphereCast(pivotPos, dir, tpsCam.collisionRadius, requestedDistance + tpsCam.collisionBuffer, ignoreID);
+		float targetDistance = requestedDistance;
+		if (hit.hasHit) {
+			targetDistance = std::max(tpsCam.minCollisionDistance, hit.distance - tpsCam.collisionBuffer);
+		}
+
+		if (!tpsCam.currentPosInitialized) {
+			tpsCam.currentDistance = targetDistance;
+			tpsCam.currentPos = pivotPos + dir * targetDistance;
+			tpsCam.currentPosInitialized = true;
+		}
+
+		float smoothRate = (targetDistance < tpsCam.currentDistance)
+			? tpsCam.pullInSpeed
+			: tpsCam.pushOutSpeed;
+		float distLerp = 1.0f - std::exp(-smoothRate * dt);
+		tpsCam.currentDistance = glm::mix(tpsCam.currentDistance, targetDistance, distLerp);
+
+		glm::vec3 desiredPos = pivotPos + dir * tpsCam.currentDistance;
+
+		float posLerp = 1.0f - std::exp(-tpsCam.smoothSpeed * dt);
+		tpsCam.currentPos = glm::mix(tpsCam.currentPos, desiredPos, posLerp);
+
+		glm::vec3 toCam = tpsCam.currentPos - pivotPos;
+		float toCamLen = glm::length(toCam);
+		if (toCamLen > 0.001f) {
+			glm::vec3 toCamDir = toCam / toCamLen;
+			auto safety = physics.SphereCast(pivotPos, toCamDir, tpsCam.collisionRadius, toCamLen + tpsCam.collisionBuffer, ignoreID);
+			if (safety.hasHit) {
+				float safeDist = std::max(tpsCam.minCollisionDistance, safety.distance - tpsCam.collisionBuffer);
+				if (safeDist < toCamLen) {
+					tpsCam.currentPos = pivotPos + toCamDir * safeDist;
+					tpsCam.currentDistance = std::min(tpsCam.currentDistance, safeDist);
+				}
+			}
+		}
 
 		camTransform.position = tpsCam.currentPos;
 		camTransform.dirty = true;
@@ -136,6 +172,5 @@ private:
 		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
 		camTransform.rotation = glm::quatLookAt(forward, up);
-		//camTransform.forward = glm::normalize(pivotPos - camTransform.position);
 	}
 };
