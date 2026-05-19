@@ -208,44 +208,61 @@ private:
         auto* rb = World::Get().GetComponent<RigidBodyComponent>(playerEntity);
         JPH::Vec3 currentJoltVel = physics._manager.GetBodyInterface().GetLinearVelocity(rb->bodyID);
 
-        if (inputMag > 0.001f) {
+        bool hasInput = inputMag > 0.001f;
+        glm::vec3 moveDir(0.0f);
+        glm::vec3 targetHorizVel(0.0f);
+
+        if (hasInput) {
             glm::vec2 normInputDir = inputDir / inputMag;
 
-            // inputdir transform from character space to camera space
             float rad = glm::radians(cameraYaw);
             glm::vec3 forward = { -sin(rad), 0, -cos(rad) };
             glm::vec3 right = { cos(rad), 0, -sin(rad) };
 
-            glm::vec3 moveDir = forward * normInputDir.y + right * normInputDir.x;
+            moveDir = forward * normInputDir.y + right * normInputDir.x;
+            targetHorizVel = moveDir * currentMoveSpeed;
 
-            // currentMoveSpeed
-            character.velocity.x = moveDir.x * currentMoveSpeed;
-            character.velocity.z = moveDir.z * currentMoveSpeed;
-
-            // record target facing direction (character faces movement direction)
             character.targetYaw = glm::degrees(atan2(-moveDir.x, -moveDir.z));
+        }
 
-            // final speed = playerspeed + platformspeed
+        bool isDashPressed = inputManager.isMouseButtonDown(GLFW_MOUSE_BUTTON_2) ||
+            inputManager.isGamepadButtonDown(GLFW_GAMEPAD_BUTTON_X);
+        bool wantsDash = hasInput && character.hasAbility(Ability::Dash) && isDashPressed && dashTimer <= 0.0f;
+
+        if (ip.isGrounded) {
+            glm::vec3 currentHorizVel(character.velocity.x, 0.0f, character.velocity.z);
+            float smoothRate = hasInput ? character.acceleration : character.deceleration;
+            float lerpFactor = 1.0f - std::exp(-smoothRate * dt);
+            glm::vec3 newHorizVel = glm::mix(currentHorizVel, targetHorizVel, lerpFactor);
+
+            character.velocity.x = newHorizVel.x;
+            character.velocity.z = newHorizVel.z;
+
             glm::vec3 finalVel = character.velocity + ip.PointVelocity;
-
             glm::vec3 newVel = glm::vec3(finalVel.x, currentJoltVel.GetY(), finalVel.z);
 
-            bool isDashPressed = inputManager.isMouseButtonDown(GLFW_MOUSE_BUTTON_2) ||
-                inputManager.isGamepadButtonDown(GLFW_GAMEPAD_BUTTON_X);
-
-            if (character.hasAbility(Ability::Dash) && isDashPressed && dashTimer <= 0.0f) {
+            if (wantsDash) {
                 newVel += moveDir * maxDashSpeed * 100.0f;
                 dashTimer = 1.0f;
             }
             physics.setEntityVelocity(playerEntity, newVel);
         }
-
         else {
-            if (ip.isGrounded) {
-                character.velocity.x = 0.0f;
-                character.velocity.z = 0.0f;
+            if (hasInput) {
+                glm::vec3 currentHorizVel(character.velocity.x, 0.0f, character.velocity.z);
+                float lerpFactor = 1.0f - std::exp(-character.airControl * dt);
+                glm::vec3 newHorizVel = glm::mix(currentHorizVel, targetHorizVel, lerpFactor);
 
-                glm::vec3 newVel = glm::vec3(ip.PointVelocity.x, currentJoltVel.GetY(), ip.PointVelocity.z);
+                character.velocity.x = newHorizVel.x;
+                character.velocity.z = newHorizVel.z;
+
+                glm::vec3 finalVel = character.velocity + ip.PointVelocity;
+                glm::vec3 newVel = glm::vec3(finalVel.x, currentJoltVel.GetY(), finalVel.z);
+
+                if (wantsDash) {
+                    newVel += moveDir * maxDashSpeed * 100.0f;
+                    dashTimer = 1.0f;
+                }
                 physics.setEntityVelocity(playerEntity, newVel);
             }
             else {

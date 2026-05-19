@@ -31,6 +31,10 @@ struct CharacterComponent {
     float jumpForce = 8.0f;
 	float rotateSpeed = 10.0f; // character rotation speed (for interpolating facing direction)
 
+    float acceleration = 18.0f;   // ground accelerate rate towards target velocity
+    float deceleration = 22.0f;   // ground stopping rate when no input
+    float airControl   = 5.0f;    // air horizontal control rate
+
     float currentMaxSpeed = walkSpeed;
 
     float jumpTimer = 0.0f;
