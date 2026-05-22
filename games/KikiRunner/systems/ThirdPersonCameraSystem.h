@@ -3,6 +3,7 @@
 #include "components/CharacterComponent.h"
 #include "components/ThirdPersonCameraComponent.hpp"
 #include "events/ResetThirdPersonCameraEvent.hpp"
+#include "events/TeleportPerformedEvent.h"
 
 class ThirdPersonCamera : public Camera {
 public:
@@ -32,10 +33,59 @@ public:
 	void OnStart() override {
 		Reset();
 		MessageCenter::Subscribe<ResetThirdPersonCameraEvent, &ThirdPersonCameraSystem::OnResetEvent>(this);
+		MessageCenter::Subscribe<TeleportPerformedEvent, &ThirdPersonCameraSystem::OnTeleportPerformed>(this);
 	}
 
 	void OnResetEvent(const ResetThirdPersonCameraEvent& e) {
 		Reset();
+	}
+
+	void OnTeleportPerformed(const TeleportPerformedEvent& e) {
+		auto camView = World::Get().Query<TransformComponent, ThirdPersonCameraComponent>();
+		for (auto [ce, camTransform, cam] : camView.each()) {
+			if (cam.followTarget != e.actor) continue;
+
+			glm::vec3 oldPivot = e.oldPosition + glm::vec3(0, cam.height, 0);
+			glm::vec3 newPivot = e.newPosition + glm::vec3(0, cam.height, 0);
+
+			if (cam.currentPosInitialized) {
+				cam.currentPos = newPivot + e.deltaRotation * (cam.currentPos - oldPivot);
+			} else {
+				cam.currentPos = newPivot;
+				cam.currentPosInitialized = true;
+			}
+
+			camTransform.position = newPivot + e.deltaRotation * (camTransform.position - oldPivot);
+			camTransform.rotation = e.deltaRotation * camTransform.rotation;
+			camTransform.dirty = true;
+
+			cam.yaw += e.yawDeltaDegrees;
+		}
+	}
+
+	static void SnapCameraToTarget(TransformComponent& camTransform, ThirdPersonCameraComponent& cam) {
+		auto* targetTransform = World::Get().GetComponent<TransformComponent>(cam.followTarget);
+		if (!targetTransform) return;
+
+		glm::vec3 pivotPos = targetTransform->position + glm::vec3(0, cam.height, 0);
+		float yawRad   = glm::radians(cam.yaw);
+		float pitchRad = glm::radians(cam.pitch);
+		glm::vec3 offset = {
+			cam.distance * cos(pitchRad) * sin(yawRad),
+			cam.distance * sin(pitchRad),
+			cam.distance * cos(pitchRad) * cos(yawRad)
+		};
+		glm::vec3 dir = glm::normalize(offset);
+
+		cam.currentDistance = cam.distance;
+		cam.currentPos = pivotPos + dir * cam.distance;
+		cam.currentPosInitialized = true;
+
+		camTransform.position = cam.currentPos;
+		camTransform.dirty = true;
+		glm::vec3 forward = glm::normalize(pivotPos - camTransform.position);
+		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+		camTransform.rotation = glm::quatLookAt(forward, up);
 	}
 	
 private:

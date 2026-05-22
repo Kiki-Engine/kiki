@@ -5,6 +5,8 @@
 #include "systems/CharacterSystem.h"
 #include "systems/ThirdPersonCameraSystem.h"
 #include "systems/GoalTriggerSystem.h"
+#include "systems/TriggerSystem.hpp"
+#include "systems/TeleportTriggerSystem.hpp"
 #include "systems/TimeLimitSystem.h"
 
 int main(int argc, char** argv) {
@@ -25,6 +27,8 @@ int main(int argc, char** argv) {
 	engine.RegisterSystem<LevelSystem>();
 	engine.RegisterSystem<CharacterSystem>();
 	engine.RegisterSystem<ThirdPersonCameraSystem>();
+	engine.RegisterSystem<TriggerSystem>();
+	engine.RegisterSystem<TeleportTriggerSystem>();
 	engine.RegisterSystem<GoalTriggerSystem>();
 	engine.RegisterSystem<TimeLimitSystem>();
 	engine.RegisterSystem<UISystem>();

@@ -177,6 +177,12 @@ enum class MmiscTags {
 	SPAWN
 };
 
+enum class MtriggerKind {
+	NONE,
+	GOAL,
+	TELEPORT
+};
+
 enum class MsimpleAnimType {
 	NONE,
 	UP_DOWN,
@@ -200,12 +206,22 @@ struct MmeshInstance {
 	float anim_distance = 5.f;
 	float anim_speed = 1.f;
 	float anim_rotation_speed = 90.f;
+
+	MtriggerKind triggerKind = MtriggerKind::NONE;
+	glm::vec3    triggerHalfExtents = { 1.f, 1.f, 0.1f };
+	int          teleportLoopNum = 0;
+	int          teleportOrder   = 0;
 };
 struct MemtpyInstance {
 	glm::mat4 transform;
 	MbodyType bodyType = MbodyType::STATIC;
 	McolliderType colliderType = McolliderType::NONE;
 	MmiscTags miscTag = MmiscTags::NONE;
+
+	MtriggerKind triggerKind = MtriggerKind::NONE;
+	glm::vec3    triggerHalfExtents = { 1.f, 1.f, 0.1f };
+	int          teleportLoopNum = 0;
+	int          teleportOrder   = 0;
 };
 struct Mlights {
 	std::string name;
@@ -407,6 +423,40 @@ namespace Kiki {
 
 		}
 
+		static MtriggerKind parseTriggerKind(aiNode* node) {
+			if (!node || !node->mMetaData) {
+				return MtriggerKind::NONE;
+			}
+			aiString s;
+			if (!node->mMetaData->Get("trigger_kind", s)) {
+				return MtriggerKind::NONE;
+			}
+			std::string str = s.C_Str();
+			if (str == "goal")     return MtriggerKind::GOAL;
+			if (str == "teleport") return MtriggerKind::TELEPORT;
+			return MtriggerKind::NONE;
+		}
+
+		static float parseFloatExtra(aiNode* node, const char* key, float dflt) {
+			if (!node || !node->mMetaData) return dflt;
+			float v = dflt;
+			if (node->mMetaData->Get(key, v)) return v;
+			double d;
+			if (node->mMetaData->Get(key, d)) return (float)d;
+			return dflt;
+		}
+
+		static int parseIntExtra(aiNode* node, const char* key, int dflt) {
+			if (!node || !node->mMetaData) return dflt;
+			int v = dflt;
+			if (node->mMetaData->Get(key, v)) return v;
+			float f;
+			if (node->mMetaData->Get(key, f)) return (int)f;
+			double d;
+			if (node->mMetaData->Get(key, d)) return (int)d;
+			return dflt;
+		}
+
 		static MsimpleAnimType parseSimpleAnimType(aiNode* node) {
 			if (!node || !node->mMetaData) {
 				return MsimpleAnimType::NONE;
@@ -482,6 +532,14 @@ namespace Kiki {
 
 					instance.miscTag = parseMiscTag(node);
 
+					instance.triggerKind = parseTriggerKind(node);
+					instance.triggerHalfExtents = glm::vec3(
+						parseFloatExtra(node, "trigger_half_x", instance.triggerHalfExtents.x),
+						parseFloatExtra(node, "trigger_half_y", instance.triggerHalfExtents.y),
+						parseFloatExtra(node, "trigger_half_z", instance.triggerHalfExtents.z));
+					instance.teleportLoopNum = parseIntExtra(node, "teleport_loop_num", 0);
+					instance.teleportOrder   = parseIntExtra(node, "teleport_order",   0);
+
 					instance.simpleAnim = parseSimpleAnimType(node);
 					float animDistance;
 					if (node->mMetaData->Get("anim_distance", animDistance)) {
@@ -506,6 +564,13 @@ namespace Kiki {
 				emptyInstance.bodyType = MbodyType::STATIC; // Default to static for empty instances
 				emptyInstance.colliderType = McolliderType::NONE; // Default to no collider for empty instances
 				emptyInstance.miscTag = miscTag;
+				emptyInstance.triggerKind = parseTriggerKind(node);
+				emptyInstance.triggerHalfExtents = glm::vec3(
+					parseFloatExtra(node, "trigger_half_x", emptyInstance.triggerHalfExtents.x),
+					parseFloatExtra(node, "trigger_half_y", emptyInstance.triggerHalfExtents.y),
+					parseFloatExtra(node, "trigger_half_z", emptyInstance.triggerHalfExtents.z));
+				emptyInstance.teleportLoopNum = parseIntExtra(node, "teleport_loop_num", 0);
+				emptyInstance.teleportOrder   = parseIntExtra(node, "teleport_order",   0);
 				spdlog::info("Empty instance for node {} with misc tag: {}", node->mName.C_Str(), static_cast<int>(miscTag));
 				spdlog::info("Transform for empty instance:");
 				for (int i = 0; i < 4; i++) {

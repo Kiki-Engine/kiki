@@ -9,6 +9,7 @@
 #include "events/ObjectiveAchievedEvent.hpp"
 #include "events/RequestLevelChangeEvent.hpp"
 #include "events/RespawnCharacterEvent.hpp"
+#include "events/TeleportPerformedEvent.h"
 #include "../../../kiki-engine/Audio/BGMController.h"
 class CharacterSystem : public System {
 public:
@@ -40,6 +41,22 @@ public:
         MessageCenter::Subscribe<ResetLevelEvent, &CharacterSystem::OnResetEvent>(this);
         MessageCenter::Subscribe<RequestLevelChangeEvent, &CharacterSystem::OnLevelChange>(this);
         MessageCenter::Subscribe<RespawnCharacterEvent, &CharacterSystem::OnRespawnEvent>(this);
+        MessageCenter::Subscribe<TeleportPerformedEvent, &CharacterSystem::OnTeleportPerformed>(this);
+    }
+
+    void OnTeleportPerformed(const TeleportPerformedEvent& e) {
+        if (e.actor != playerEntity) return;
+        auto* character = World::Get().GetComponent<CharacterComponent>(playerEntity);
+        auto* transform = World::Get().GetComponent<TransformComponent>(playerEntity);
+        if (!character || !transform) return;
+
+        glm::vec3 fwd = transform->rotation * glm::vec3(0.0f, 0.0f, 1.0f);
+        float yawDeg = glm::degrees(std::atan2(-fwd.x, -fwd.z));
+        character->facingYaw = yawDeg;
+        character->targetYaw = yawDeg;
+
+        glm::vec3 vel = e.deltaRotation * character->velocity;
+        character->velocity = vel;
     }
     void OnStop() override {
        

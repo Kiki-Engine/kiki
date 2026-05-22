@@ -6,6 +6,8 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
+#include <Jolt/Physics/Collision/Shape/ScaleHelpers.h>
 
 #include "ECS/World.h"
 #include <spdlog/spdlog.h>
@@ -33,7 +35,6 @@ namespace Kiki {
         auto& reg = World::Get().Registry();
         auto& bodyInterface = _manager.GetBodyInterface();
         auto view = reg.view<TransformComponent, RigidBodyComponent, PhysicalAttributesComponent>();
-
         for (auto [entity, transform, rb,ip] : view.each()) {
             if (transform.dirty) {
                 if (rb.motionType == JPH::EMotionType::Kinematic) {
@@ -161,6 +162,7 @@ namespace Kiki {
         auto& transform = reg.get<TransformComponent>(entity);
 
         JPH::ShapeRefC shape;
+        bool requiresUniformScale = false; // capsule + sphere can't accept non-uniform scale
 
         if (auto* meshColl = reg.try_get<MeshColliderComponent>(entity)) {
             shape = meshColl->shape;
@@ -179,16 +181,42 @@ namespace Kiki {
             );
 
             shape = offsetShapeSettings.Create().Get();
+            requiresUniformScale = true;
         }
         else if (auto* box = reg.try_get<BoxColliderComponent>(entity)) {
             shape = new JPH::BoxShape(ToJPH(box->halfExtents));
         }
         else if (auto* sphere = reg.try_get<SphereColliderComponent>(entity)) {
             shape = new JPH::SphereShape(sphere->radius);
+            requiresUniformScale = true;
         }
         else {
             shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
             spdlog::warn("Entity {} has RigidBody but no Collider. Created default box shape.", (uint32_t)entity);
+        }
+
+        // Wrap the shape with a ScaledShape so transform.scale (e.g. coming from
+        // glTF parent nodes that haven't had their scale applied) propagates to
+        // the physics body. Without this, the shape uses the raw mesh-local
+        // vertices while rendering uses T*R*S, so the collision box mysteriously
+        // shifts / shrinks relative to what you see on screen.
+        {
+            JPH::Vec3 scaleVec = ToJPH(transform.scale);
+            if (!JPH::ScaleHelpers::IsNotScaled(scaleVec)) {
+                if (requiresUniformScale && !JPH::ScaleHelpers::IsUniformScale(scaleVec)) {
+                    JPH::Vec3 uniform = JPH::ScaleHelpers::MakeUniformScale(scaleVec);
+                    spdlog::warn(
+                        "Entity {}: shape requires uniform scale but transform.scale = ({:.3f}, {:.3f}, {:.3f}); forcing uniform = {:.3f}",
+                        (uint32_t)entity,
+                        scaleVec.GetX(), scaleVec.GetY(), scaleVec.GetZ(),
+                        uniform.GetX());
+                    scaleVec = uniform;
+                }
+                if (JPH::ScaleHelpers::IsZeroScale(scaleVec)) {
+                    scaleVec = JPH::ScaleHelpers::MakeNonZeroScale(scaleVec);
+                }
+                shape = new JPH::ScaledShape(shape, scaleVec);
+            }
         }
 
         JPH::BodyCreationSettings settings(

@@ -15,6 +15,8 @@ target_sources(KikiRunner
         systems/GoalTriggerSystem.h
         systems/ThirdPersonCameraSystem.h
         systems/TimeLimitSystem.h
+        systems/TriggerSystem.hpp
+        systems/TeleportTriggerSystem.hpp
         events/LevelLoadedEvent.hpp
         events/RequestLevelChangeEvent.hpp
         events/TimerTriggerEvent.h
@@ -22,6 +24,8 @@ target_sources(KikiRunner
         events/RespawnCharacterEvent.hpp
         events/ObjectiveAchievedEvent.hpp
         events/ResetThirdPersonCameraEvent.hpp
+        events/TriggerEvent.h
+        events/TeleportPerformedEvent.h
         components/CharacterComponent.h
         components/ThirdPersonCameraComponent.hpp
 )

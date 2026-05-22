@@ -8,6 +8,8 @@
 #include "physics/PhysicsSystem.hpp" 
 #include "Components/MiscComponent.hpp"
 #include "Components/RoughnessMetallicFactorComponent.hpp"
+#include "Components/TriggerComponent.hpp"
+#include "Components/LevelEntityTag.hpp"
 
 #include "Animation/AnimationLoader.h"
 #include "Animation/AnimationComponent.h"
@@ -97,11 +99,15 @@ namespace Kiki {
 
             auto& registry = World::Get().Registry();
 
-            auto view = World::Get().Query<MeshComponent>();
+            auto view = World::Get().Query<LevelEntityTag>();
 
             {
                 std::lock_guard<std::mutex> lock(registryMutex);
-                for (auto [e, meshComponent] : view.each()) {
+                std::vector<entt::entity> toDestroy;
+                for (auto [e,tag] : view.each()) {
+                    toDestroy.push_back(e);
+                }
+                for (auto e : toDestroy) {
                     registry.destroy(e);
                 }
             }
@@ -294,6 +300,7 @@ namespace Kiki {
             const Mtexture& texture = scene.textures[mesh.matIndex];
             {
                 std::lock_guard<std::mutex> lock(registryMutex);
+                registry.emplace<LevelEntityTag>(model);
                 auto& transform = registry.emplace<TransformComponent>(model);
                 glm::vec3 skew;
                 glm::vec4 perspective;
@@ -529,6 +536,29 @@ namespace Kiki {
                     registry.emplace<MiscComponent>(model, instance.miscTag);
                 }
 			}
+
+            // Backwards compat: legacy GOAL meshes get a GoalTag (CollisionEvent path)
+            if (instance.miscTag == MmiscTags::GOAL) {
+                std::lock_guard<std::mutex> lock(registryMutex);
+                if (!registry.any_of<GoalTag>(model)) {
+                    registry.emplace<GoalTag>(model);
+                }
+            }
+
+            // New TRIGGER tag path on a mesh entity (rare but supported)
+            if (instance.miscTag == MmiscTags::TRIGGER) {
+                std::lock_guard<std::mutex> lock(registryMutex);
+                registry.emplace<TriggerComponent>(model, instance.triggerHalfExtents, true);
+                switch (instance.triggerKind) {
+                    case MtriggerKind::GOAL:
+                        registry.emplace<GoalTag>(model);
+                        break;
+                    case MtriggerKind::TELEPORT:
+                        registry.emplace<TeleportTag>(model, instance.teleportLoopNum, instance.teleportOrder);
+                        break;
+                    default: break;
+                }
+            }
         }
         for (int i = 0; i < scene.emptyInstances.size(); i++) {
             entt::entity model;
@@ -540,6 +570,7 @@ namespace Kiki {
             const auto& instance = scene.emptyInstances[i];
             {
                 std::lock_guard<std::mutex> lock(registryMutex);
+                registry.emplace<LevelEntityTag>(model);
                 registry.emplace<TransformComponent>(model);
             }
             auto& transform = registry.get<TransformComponent>(model);
@@ -553,6 +584,24 @@ namespace Kiki {
                     std::lock_guard<std::mutex> lock(registryMutex);
                     registry.emplace<MiscComponent>(model, instance.miscTag);
                 }
+            }
+
+            if (instance.miscTag == MmiscTags::TRIGGER) {
+                std::lock_guard<std::mutex> lock(registryMutex);
+                registry.emplace<TriggerComponent>(model, instance.triggerHalfExtents, true);
+                switch (instance.triggerKind) {
+                    case MtriggerKind::GOAL:
+                        registry.emplace<GoalTag>(model);
+                        break;
+                    case MtriggerKind::TELEPORT:
+                        registry.emplace<TeleportTag>(model, instance.teleportLoopNum, instance.teleportOrder);
+                        break;
+                    default: break;
+                }
+            } else if (instance.miscTag == MmiscTags::GOAL) {
+                // Legacy: empty marker tagged "goal" -> only attach GoalTag (no plane crossing)
+                std::lock_guard<std::mutex> lock(registryMutex);
+                registry.emplace<GoalTag>(model);
             }
         }
     }

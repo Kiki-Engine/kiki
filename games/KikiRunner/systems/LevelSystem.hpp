@@ -23,13 +23,11 @@ class LevelSystem : public System {
 	}
 
 	void OnTriggerEnter(const RequestLevelChangeEvent& e) {
-		std::thread([this, e]() {
-			sceneManager.clearLevel();
-			for (auto path : e.levelPaths) {
-				sceneManager.loadScene(Kiki::GltfLoaderAssimp::loadScene(path));
-			}
-			loaded = true;
-		}).detach();
+		sceneManager.clearLevel();
+		for (auto path : e.levelPaths) {
+			sceneManager.loadScene(Kiki::GltfLoaderAssimp::loadScene(path));
+		}
+		loaded = true;
 	}
 
 	private:

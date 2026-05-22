@@ -167,26 +167,25 @@ class UISystem : public System {
 	Phase GetPhase() const override { return Phase::Input; }
 
 	void OnStart() override {
-		createSplashScreen();
-
-		std::thread([this]() {
-			fontManager.loadFont(std::filesystem::path(PROJECT_ASSETS_PATH) / "fonts/Chewy-Regular.ttf", "chewy-regular");
-			textureManager.loadTexture(std::filesystem::path(PROJECT_ASSETS_PATH) / "interface/tick.png", "Tick");
-
-			MessageCenter::Publish(RequestLevelChangeEvent({ 
-				std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
-				std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h2.glb"
-				}));
-
-			createMainMenu();
-			initialised = true;
-		}).detach();
-
 		MessageCenter::Subscribe<AnimationEndEvent, &UISystem::OnAnimationEnd>(this);
 		MessageCenter::Subscribe<LevelLoadedEvent, &UISystem::OnLevelLoaded>(this);
 		MessageCenter::Subscribe<ButtonHoverEvent, &UISystem::OnButtonHover>(this);
 		MessageCenter::Subscribe<ButtonClickEvent, &UISystem::OnButtonPress>(this);
 		MessageCenter::Subscribe<ObjectiveAchievedEvent, &UISystem::OnObjectiveComplete>(this);
+
+		createSplashScreen();
+
+		fontManager.loadFont(std::filesystem::path(PROJECT_ASSETS_PATH) / "fonts/Chewy-Regular.ttf", "chewy-regular");
+		textureManager.loadTexture(std::filesystem::path(PROJECT_ASSETS_PATH) / "interface/tick.png", "Tick");
+
+		MessageCenter::Publish(RequestLevelChangeEvent({
+			std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
+			std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h2.glb"
+			//std::filesystem::path(PROJECT_ASSETS_PATH) / "test_level_tele.glb",
+			}));
+
+		createMainMenu();
+		initialised = true;
 	}
 
 	void OnUpdate(float dt) override {
@@ -330,7 +329,8 @@ class UISystem : public System {
 					MessageCenter::Publish(RequestLevelChangeEvent({
 						std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
 						std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h2.glb",
-						std::filesystem::path(PROJECT_ASSETS_PATH) / "kiki_player.glb"
+						std::filesystem::path(PROJECT_ASSETS_PATH) / "kiki_player.glb",
+						//std::filesystem::path(PROJECT_ASSETS_PATH) / "test_level_tele.glb",
 					}));
 
 					createLevelScreen();
@@ -384,6 +384,7 @@ class UISystem : public System {
 						MessageCenter::Publish(RequestLevelChangeEvent({
 						std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
 						std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h2.glb"
+							//std::filesystem::path(PROJECT_ASSETS_PATH) / "test_level_tele.glb",
 						}));
 
 						createMainMenu();
