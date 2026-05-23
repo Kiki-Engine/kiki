@@ -21,4 +21,5 @@ target_sources(kiki
       SimpleAnimationComponent.hpp
       TriggerComponent.hpp
       LevelEntityTag.hpp
+      DoorComponent.hpp
 )

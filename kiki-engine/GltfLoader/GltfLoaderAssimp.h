@@ -174,7 +174,8 @@ enum class MmiscTags {
 	TRIGGER,
 	PLAYER,
 	GOAL,
-	SPAWN
+	SPAWN,
+	DOOR
 };
 
 enum class MtriggerKind {
@@ -211,6 +212,10 @@ struct MmeshInstance {
 	glm::vec3    triggerHalfExtents = { 1.f, 1.f, 0.1f };
 	int          teleportLoopNum = 0;
 	int          teleportOrder   = 0;
+
+	float doorRadius      = 2.0f;
+	float doorAngleDeg    = 90.0f;
+	float doorSpeedDegSec = 540.0f;
 };
 struct MemtpyInstance {
 	glm::mat4 transform;
@@ -418,6 +423,7 @@ namespace Kiki {
 			if (s == "player")  return MmiscTags::PLAYER;
 			if (s == "goal")    return MmiscTags::GOAL;
 			if (s == "spawn")   return MmiscTags::SPAWN;
+			if (s == "door")    return MmiscTags::DOOR;
 
 			return MmiscTags::NONE;
 
@@ -553,6 +559,10 @@ namespace Kiki {
 					if (node->mMetaData->Get("anim_rotation_speed", animRotationSpeed)) {
 						instance.anim_rotation_speed = animRotationSpeed;
 					}
+
+					instance.doorRadius      = parseFloatExtra(node, "door_radius", instance.doorRadius);
+					instance.doorAngleDeg    = parseFloatExtra(node, "door_angle",  instance.doorAngleDeg);
+					instance.doorSpeedDegSec = parseFloatExtra(node, "door_speed",  instance.doorSpeedDegSec);
 				}
 
 				out.instances.push_back(instance);

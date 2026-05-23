@@ -7,6 +7,7 @@
 #include "systems/GoalTriggerSystem.h"
 #include "systems/TriggerSystem.hpp"
 #include "systems/TeleportTriggerSystem.hpp"
+#include "systems/DoorSystem.hpp"
 #include "systems/TimeLimitSystem.h"
 
 int main(int argc, char** argv) {
@@ -30,6 +31,7 @@ int main(int argc, char** argv) {
 	engine.RegisterSystem<TriggerSystem>();
 	engine.RegisterSystem<TeleportTriggerSystem>();
 	engine.RegisterSystem<GoalTriggerSystem>();
+	engine.RegisterSystem<DoorSystem>();
 	engine.RegisterSystem<TimeLimitSystem>();
 	engine.RegisterSystem<UISystem>();
 

@@ -17,6 +17,7 @@ target_sources(KikiRunner
         systems/TimeLimitSystem.h
         systems/TriggerSystem.hpp
         systems/TeleportTriggerSystem.hpp
+        systems/DoorSystem.hpp
         events/LevelLoadedEvent.hpp
         events/RequestLevelChangeEvent.hpp
         events/TimerTriggerEvent.h

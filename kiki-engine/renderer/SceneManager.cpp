@@ -10,6 +10,7 @@
 #include "Components/RoughnessMetallicFactorComponent.hpp"
 #include "Components/TriggerComponent.hpp"
 #include "Components/LevelEntityTag.hpp"
+#include "Components/DoorComponent.hpp"
 
 #include "Animation/AnimationLoader.h"
 #include "Animation/AnimationComponent.h"
@@ -426,6 +427,11 @@ namespace Kiki {
                 break;
              }
 
+            if (instance.miscTag == MmiscTags::DOOR) {
+                joltMotionType = JPH::EMotionType::Kinematic;
+                joltLayer = 0;
+            }
+
             switch (instance.colliderType) {
             case McolliderType::BOX:
                 {
@@ -558,6 +564,18 @@ namespace Kiki {
                         break;
                     default: break;
                 }
+            }
+
+            if (instance.miscTag == MmiscTags::DOOR) {
+                std::lock_guard<std::mutex> lock(registryMutex);
+                DoorComponent door;
+                door.triggerRadius   = instance.doorRadius;
+                door.openAngleDeg    = instance.doorAngleDeg;
+                door.speedDegPerSec  = instance.doorSpeedDegSec;
+                door.closedRotation  = transform.rotation;
+                registry.emplace<DoorComponent>(model, door);
+                spdlog::info("[Door] Attached DoorComponent to mesh '{}' (radius={:.2f}, angle={:.2f}, speed={:.2f})",
+                    mesh.name, door.triggerRadius, door.openAngleDeg, door.speedDegPerSec);
             }
         }
         for (int i = 0; i < scene.emptyInstances.size(); i++) {

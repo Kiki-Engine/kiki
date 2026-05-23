@@ -62,6 +62,7 @@ class GLTFTAG_PresetItem(PropertyGroup):
             ("PLAYER", "Player", ""),
             ("GOAL", "Goal", ""),
             ("SPAWN", "Spawn", ""),
+            ("DOOR", "Door", ""),
         ],
         default="NONE"
     )
@@ -126,6 +127,7 @@ class GLTFTAG_SceneProps(PropertyGroup):
             ("PLAYER", "Player", ""),
             ("GOAL", "Goal", ""),
             ("SPAWN", "Spawn", ""),
+            ("DOOR", "Door", ""),
         ],
         default="NONE",
     )
@@ -179,6 +181,21 @@ class GLTFTAG_SceneProps(PropertyGroup):
         default=90.0,
     )
 
+    door_radius: FloatProperty(
+        name="Door Radius",
+        default=2.0,
+        min=0.0,
+    )
+    door_angle: FloatProperty(
+        name="Door Open Angle",
+        default=90.0,
+    )
+    door_speed: FloatProperty(
+        name="Door Speed",
+        default=540.0,
+        min=0.0,
+    )
+
 
 # ---------------------------------------------------
 # Operators
@@ -200,6 +217,10 @@ def apply_ui_to_object(obj, ui):
     obj["trigger_half_z"] = float(ui.trigger_half_z)
     obj["teleport_loop_num"] = int(ui.teleport_loop_num)
     obj["teleport_order"]    = int(ui.teleport_order)
+
+    obj["door_radius"] = float(ui.door_radius)
+    obj["door_angle"]  = float(ui.door_angle)
+    obj["door_speed"]  = float(ui.door_speed)
 
 
 class GLTFTAG_OT_apply_active(Operator):
@@ -267,6 +288,13 @@ class GLTFTAG_PT_main_panel(Panel):
             if ui.trigger_kind == "TELEPORT":
                 box.prop(ui, "teleport_loop_num")
                 box.prop(ui, "teleport_order")
+
+        if ui.misc_type == "DOOR":
+            box = layout.box()
+            box.label(text="Door Settings")
+            box.prop(ui, "door_radius")
+            box.prop(ui, "door_angle")
+            box.prop(ui, "door_speed")
 
         layout.separator()
 
