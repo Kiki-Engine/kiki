@@ -394,8 +394,8 @@ class UISystem : public System {
 						}
 
 						MessageCenter::Publish(RequestLevelChangeEvent({
-							std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
-							std::filesystem::path(PROJECT_ASSETS_PATH) / "level_l_h2.glb"
+							std::filesystem::path(PROJECT_ASSETS_PATH) / "level2.glb",
+							//std::filesystem::path(PROJECT_ASSETS_PATH) / "level_l_h2.glb"
 							//std::filesystem::path(PROJECT_ASSETS_PATH) / "tele.glb",
 						}));
 
