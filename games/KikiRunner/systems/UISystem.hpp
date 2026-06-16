@@ -692,6 +692,8 @@ class UISystem : public System {
 			registry.emplace<BackgroundComponent>(screen->playButton, glm::vec3(20.0f / 255.0f, 70.0f / 255.0f, 120.0f / 255.0f), 0.8f, 28.0f);
 			registry.emplace<ButtonComponent>(screen->playButton, glm::vec4(20.0f / 255.0f, 70.0f / 255.0f, 120.0f / 255.0f, 0.2f), glm::vec4(29.0f / 255.0f, 100.0f / 255.0f, 171.0f / 255.0f, 0.2f), glm::vec4(12.0f / 255.0f, 40.0f / 255.0f, 69.0f / 255.0f, 0.2f));
 
+			// add level 2 button :)
+
 			screen->playButtonInner = world.CreateEntity();
 			registry.emplace<InterfaceComponent>(screen->playButtonInner, ScaleVec2D(0.0f, 12.0f, 0.0f, 12.0f), ScaleVec2D(1.0f, -24.0f, 1.0f, -24.0f), screen->playButton, (unsigned int) 42);
 			registry.emplace<BackgroundComponent>(screen->playButtonInner, glm::vec3(20.0f / 255.0f, 70.0f / 255.0f, 120.0f / 255.0f), 0.6f, 16.0f);
