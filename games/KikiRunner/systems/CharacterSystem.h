@@ -32,6 +32,10 @@ public:
 			HandleJump(entity, transform, character, ip, dt);
 			HandleRotation(transform, character, dt);
             UpdateState(character,ip);
+
+		    if (transform.position.y < -25.0f) {
+		        MessageCenter::Publish(RespawnCharacterEvent());
+		    }
         }
         auto& inputManager = Kiki::InputManager::get();
     }
