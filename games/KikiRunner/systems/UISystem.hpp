@@ -175,17 +175,18 @@ class UISystem : public System {
 
 		createSplashScreen();
 
-		fontManager.loadFont(std::filesystem::path(PROJECT_ASSETS_PATH) / "fonts/Chewy-Regular.ttf", "chewy-regular");
-		textureManager.loadTexture(std::filesystem::path(PROJECT_ASSETS_PATH) / "interface/tick.png", "Tick");
+		std::thread([this]() {
+			fontManager.loadFont(std::filesystem::path(PROJECT_ASSETS_PATH) / "fonts/Chewy-Regular.ttf", "chewy-regular");
+			textureManager.loadTexture(std::filesystem::path(PROJECT_ASSETS_PATH) / "interface/tick.png", "Tick");
 
-		MessageCenter::Publish(RequestLevelChangeEvent({
-			std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
-			std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h2.glb"
-			//std::filesystem::path(PROJECT_ASSETS_PATH) / "tele.glb",
-			}));
+			MessageCenter::Publish(RequestLevelChangeEvent({
+				std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
+				std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h2.glb"
+				}));
 
-		createMainMenu();
-		initialised = true;
+			createMainMenu();
+			initialised = true;
+		}).detach();
 	}
 
 	void OnUpdate(float dt) override {
@@ -327,8 +328,8 @@ class UISystem : public System {
 					}
 
 					MessageCenter::Publish(RequestLevelChangeEvent({
-						std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
-						std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h2.glb",
+						std::filesystem::path(PROJECT_ASSETS_PATH) / "level2.glb",
+						//std::filesystem::path(PROJECT_ASSETS_PATH) / "level2.glb",
 						std::filesystem::path(PROJECT_ASSETS_PATH) / "kiki_player.glb",
 						//std::filesystem::path(PROJECT_ASSETS_PATH) / "tele.glb",
 					}));
@@ -382,8 +383,8 @@ class UISystem : public System {
 						}
 
 						MessageCenter::Publish(RequestLevelChangeEvent({
-						std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h1.glb",
-						std::filesystem::path(PROJECT_ASSETS_PATH) / "level_1_h2.glb"
+						std::filesystem::path(PROJECT_ASSETS_PATH) / "level2.glb",
+						//std::filesystem::path(PROJECT_ASSETS_PATH) / "level2.glb"
 							//std::filesystem::path(PROJECT_ASSETS_PATH) / "tele.glb",
 						}));
 
