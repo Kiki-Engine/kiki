@@ -335,3 +335,4 @@ target_compile_definitions(KikiDeps INTERFACE
 # --- Subdirectories ---
 add_subdirectory(kiki-engine)
 add_subdirectory(games/KikiRunner)
+add_subdirectory(games/demo)
