@@ -3,6 +3,7 @@
 
 #include <kiki.h>
 
+#include "Components/TriggerComponent.hpp"
 #include "events/RequestLevelChangeEvent.hpp"
 #include "events/LevelLoadedEvent.hpp"
 
@@ -28,6 +29,15 @@ class LevelSystem : public System {
 			for (auto path : e.levelPaths) {
 				sceneManager.loadScene(Kiki::GltfLoaderAssimp::loadScene(path));
 			}
+
+			auto goals = World::Get().Query<GoalTag>();
+
+			for (auto e : goals) {
+				if (World::Get().Registry().all_of<MeshComponent>(e)) {
+					World::Get().Registry().remove<MeshComponent>(e);
+				}
+			}
+
 			loaded = true;
 		}).detach();
 	}
