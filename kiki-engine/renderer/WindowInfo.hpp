@@ -17,10 +17,10 @@ namespace Kiki {
      * @param decorations enable/disable window decorations
      */
     struct WindowInfo {
-        int width = 1920;
-        int height = 1080;
+        int width = 0;
+        int height = 0;
         bool resizeable = false;
-        bool fullscreen = false;
+        bool fullscreen = true;
         int monitor = 0;
         const char *title = "kiki";
         std::filesystem::path icon;
