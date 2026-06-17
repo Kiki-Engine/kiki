@@ -108,6 +108,7 @@ namespace Kiki {
 
             materials.clear();
             meshes.clear();
+			RenderManager::get().lights.clear();
         }
     }
 
